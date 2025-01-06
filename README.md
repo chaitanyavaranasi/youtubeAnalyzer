@@ -91,6 +91,7 @@ Example Response
   ],
   "combined_summary": "Here is a combined summary of the two video reviews..."
 }
+```
+
 summaries: Individual summaries for each YouTube video.
 combined_summary: If cross_reference=true and multiple videos were processed, a merged summary comparing or contrasting the videos.
-```
