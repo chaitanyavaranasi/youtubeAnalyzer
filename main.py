@@ -1,10 +1,10 @@
-from fastapi import FastAPI, Request
-from anthropic import Anthropic
-from pydantic import BaseModel
-from youtube_transcript_api import YouTubeTranscriptApi
-from sentence_transformers import SentenceTransformer
-import chromadb
 from typing import List, Optional
+import chromadb
+from anthropic import Anthropic
+from fastapi import FastAPI
+from pydantic import BaseModel
+from sentence_transformers import SentenceTransformer
+from youtube_transcript_api import YouTubeTranscriptApi
 
 
 def extract_video_id(youtube_url: str) -> str:
