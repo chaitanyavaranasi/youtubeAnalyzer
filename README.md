@@ -64,7 +64,7 @@ Example cURL Call - Request Body (JSON):
 youtube_urls: A list of YouTube links to summarize.\
 claude_api_key: Your Anthropic Claude API key.\
 topic: (Optional) A keyword that helps filter the transcript to relevant sentences.\
-cross_reference: A boolean indicating whether to generate a combined summary across videos.\
+cross_reference: A boolean indicating whether to generate a combined summary across videos.
 
 
 
@@ -91,6 +91,7 @@ Example Response
   ],
   "combined_summary": "Here is a combined summary of the two video reviews..."
 }
-summaries: Individual summaries for each YouTube video.
-combined_summary: If cross_reference=true and multiple videos were processed, a merged summary comparing or contrasting the videos.
 ```
+
+summaries: Individual summaries for each YouTube video.\
+combined_summary: If cross_reference=true and multiple videos were processed, a merged summary comparing or contrasting the videos.
