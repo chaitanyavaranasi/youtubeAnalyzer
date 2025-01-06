@@ -1,15 +1,9 @@
-import os
-
-import anthropic
 from fastapi import FastAPI, Request
 from anthropic import Anthropic
 from pydantic import BaseModel
 from youtube_transcript_api import YouTubeTranscriptApi
-from transformers import AutoModel, AutoTokenizer
 from sentence_transformers import SentenceTransformer
 import chromadb
-from chromadb.config import Settings
-import concurrent.futures
 from typing import List, Optional
 
 
