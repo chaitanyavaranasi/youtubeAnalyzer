@@ -43,7 +43,7 @@ Use Uvicorn to run the FastAPI application:
 ```bash
 uvicorn main:app --reload
 ```
-By default, the server runs on http://127.0.0.1:8000.
+By default, the server runs on http://127.0.0.1:8000 on localhost. You can access a FASTAPI playground by going to http://127.0.0.1:8000/docs
 
 ---
 ## Usage
