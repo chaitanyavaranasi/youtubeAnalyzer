@@ -1,7 +1,8 @@
 import os
+
+import anthropic
 from fastapi import FastAPI, Request
-import openai
-from openai import OpenAI
+from anthropic import Anthropic
 from pydantic import BaseModel
 from youtube_transcript_api import YouTubeTranscriptApi
 from transformers import AutoModel, AutoTokenizer
@@ -37,12 +38,11 @@ def get_transcript(video_id: str) -> Optional[str]:
         return None
 
 
-def summarize_with_openai(text: str, openai_api_key: str, model: str = "gpt-4", max_tokens: int = 300) -> str:
+def summarize_with_claude(text: str, claude_api_key: str, model: str = "claude-3-sonnet-20240229", max_tokens: int = 300) -> str:
     """
-    Summarize text using OpenAI's Chat Completion API with the provided key.
+    Summarize text using Claude's API
     """
-    openai.api_key = openai_api_key
-    client = OpenAI(api_key=openai_api_key)
+    client = Anthropic(api_key=claude_api_key)
     prompt = (
         "Please summarize the following text:\n\n"
         f"{text}\n\n"
@@ -50,31 +50,28 @@ def summarize_with_openai(text: str, openai_api_key: str, model: str = "gpt-4", 
     )
 
     # Using ChatCompletion with a single user message
-    response = client.chat.completions.create(
+    response = client.messages.create(
         model=model,
         messages=[{"role": "user", "content": prompt}],
         max_tokens=max_tokens,
         temperature=0.7
     )
 
-    summary = response.choices[0].message['content'].strip()
+    summary = response.content[0].text.strip()
     return summary
 
 
-def cross_reference_summaries(summaries: List[str], openai_api_key: str, model: str = "gpt-3.5-turbo") -> str:
+def cross_reference_summaries(summaries: List[str], claude_api_key: str, model: str = "claude-3-sonnet-20240229") -> str:
     """
     Use Chroma DB to find the top 3 summaries closest to the 'average' embedding.
-    Then re-summarize them with OpenAI to create a combined summary.
+    Then re-summarize them with Claude to create a combined summary.
     """
 
     # 1. Create an in-memory Chroma client
-    client = chromadb.Client(
-        Settings(chroma_db_impl="duckdb+parquet", persist_directory=None)
-        # persist_directory=None => purely in-memory
-    )
+    client = chromadb.Client()
 
     # 2. Create a collection for storing summaries
-    collection = client.create_collection("summaries_collection")
+    collection = client.get_or_create_collection("summaries_collection")
 
     # 3. Generate embeddings for each summary and insert into Chroma
     embedding_model = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
@@ -101,18 +98,34 @@ def cross_reference_summaries(summaries: List[str], openai_api_key: str, model: 
 
     # 6. Re-summarize the combined text
     combined_text = "\n".join(top_documents)
-    cross_prompt = (
-        "Below are multiple summaries of different videos:\n\n"
-        f"{combined_text}\n\n"
-        "Please create a combined summary that captures overlapping themes and major differences:"
-    )
-    response = openai.ChatCompletion.create(
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                "Below are multiple summaries of different videos:\n\n"
+                f"{combined_text}\n\n"
+                "Please create a combined summary that captures overlapping themes "
+                "and major differences."
+            )
+        }
+    ]
+
+    claude_client = Anthropic(api_key=claude_api_key)
+    response = claude_client.messages.create(
         model=model,
-        messages=[{"role": "user", "content": cross_prompt}],
+        system="You are a helpful AI assistant. Combine multiple video summaries into a single cohesive summary.",
+        messages=messages,
         max_tokens=300,
         temperature=0.7
     )
-    combined_summary = response.choices[0].message['content'].strip()
+    print(response)
+    try:
+        # Usually, Claude's reply is the last message with role="assistant"
+        assistant_msg = response.content[0].text.strip()
+        combined_summary = assistant_msg.strip()
+    except (IndexError, KeyError):
+        # Fallback if the structure isn't as expected
+        combined_summary = "No response from Claude."
 
     return combined_summary
 
@@ -129,7 +142,7 @@ def topic_filter(text: str, topic: str) -> str:
 
 def process_videos(
     youtube_urls: List[str],
-    openai_api_key: str,
+    claude_api_key: str,
     topic: Optional[str] = None,
     cross_reference: bool = False
 ) -> dict:
@@ -137,7 +150,7 @@ def process_videos(
     Core function that:
     1. Fetches transcripts
     2. Filters by topic if provided
-    3. Summarizes using OpenAI
+    3. Summarizes using Claude
     4. Optionally cross-references summaries
     Returns a dict with 'summaries' and 'combined_summary'.
     """
@@ -156,13 +169,13 @@ def process_videos(
     # Summarize each transcript
     summaries = []
     for txt in transcripts:
-        summary = summarize_with_openai(txt, openai_api_key)
+        summary = summarize_with_claude(txt, claude_api_key)
         summaries.append(summary)
 
     # Optionally cross reference
     combined_summary = None
     if cross_reference and len(summaries) > 1:
-        combined_summary = cross_reference_summaries(summaries, openai_api_key)
+        combined_summary = cross_reference_summaries(summaries, claude_api_key)
 
     return {
         "summaries": summaries,
@@ -177,7 +190,7 @@ app = FastAPI()
 
 class RequestModel(BaseModel):
     youtube_urls: List[str]
-    openai_api_key: str
+    claude_api_key: str
     topic: Optional[str] = None
     cross_reference: bool = False
 
@@ -188,14 +201,14 @@ def api_process_videos(data: RequestModel):
     Example Request Body:
     {
         "youtube_urls": ["https://www.youtube.com/watch?v=dQw4w9WgXcQ"],
-        "openai_api_key": "sk-...",
+        "claude_api_key": "sk-...",
         "topic": "music",
         "cross_reference": true
     }
     """
     result = process_videos(
         youtube_urls= data.youtube_urls,
-        openai_api_key= data.openai_api_key,
+        claude_api_key= data.claude_api_key,
         topic= data.topic,
         cross_reference= data.cross_reference
     )
