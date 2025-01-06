@@ -19,36 +19,38 @@ A FastAPI application that:
 
 ## Installation
 
-1. **Clone** this repository:
+**Clone** this repository:
    ```bash
    git clone https://github.com/<your_username>/<repo_name>.git
    cd <repo_name>
+   ```
 
-Install dependencies:
+---
 
-bash
-Copy code
-pip install -r requirements.txt
+## Install dependencies:
+
+   ```bash
+  pip install -r requirements.txt
+  ```
+  
 Ensure you have a valid Python 3.9+ environment.
 
-Set up your Anthropic API key (Claude).
-You can either:
+---
 
-Use an environment variable: export CLAUDE_API_KEY="sk-...", or
-Pass it in the request body (as shown in the example below).
-Running the Server
+## Running the Server
 Use Uvicorn to run the FastAPI application:
 
-bash
-Copy code
+```bash
 uvicorn main:app --reload
+```
 By default, the server runs on http://127.0.0.1:8000.
-Usage
-Endpoint: POST /process_videos
-Request Body (JSON):
 
-json
-Copy code
+---
+## Usage
+Endpoint: POST /process_videos\
+Example cURL Call - Request Body (JSON):
+
+```json
 {
   "youtube_urls": [
     "https://www.youtube.com/watch?v=btlmHbwwqLg",
@@ -58,14 +60,15 @@ Copy code
   "topic": "cars",
   "cross_reference": true
 }
-youtube_urls: A list of YouTube links to summarize.
-claude_api_key: Your Anthropic Claude API key.
-topic: (Optional) A keyword that helps filter the transcript to relevant sentences.
-cross_reference: A boolean indicating whether to generate a combined summary across videos.
-Example cURL Call:
+```
+youtube_urls: A list of YouTube links to summarize.\
+claude_api_key: Your Anthropic Claude API key.\
+topic: (Optional) A keyword that helps filter the transcript to relevant sentences.\
+cross_reference: A boolean indicating whether to generate a combined summary across videos.\
 
-bash
-Copy code
+
+
+```bash
 curl -X POST http://127.0.0.1:8000/process_videos \
   -H "Content-Type: application/json" \
   -d '{
@@ -77,9 +80,10 @@ curl -X POST http://127.0.0.1:8000/process_videos \
     "topic": "cars",
     "cross_reference": true
   }'
+```
+
 Example Response
-json
-Copy code
+```json
 {
   "summaries": [
     "The text is a review and discussion about the 2024 BMW X5 M60i...",
@@ -89,26 +93,4 @@ Copy code
 }
 summaries: Individual summaries for each YouTube video.
 combined_summary: If cross_reference=true and multiple videos were processed, a merged summary comparing or contrasting the videos.
-Sample Request & Response
-Request
-json
-Copy code
-{
-  "youtube_urls": [
-    "https://www.youtube.com/watch?v=btlmHbwwqLg",
-    "https://www.youtube.com/watch?v=RoO9nArroVc"
-  ],
-  "claude_api_key": "<INSERT_KEY>",
-  "topic": "cars",
-  "cross_reference": true
-}
-Response
-json
-Copy code
-{
-  "summaries": [
-    "The text is a review and discussion about the 2024 BMW X5 M60i...",
-    "The text discusses the Mercedes-Benz GLE luxury SUV..."
-  ],
-  "combined_summary": "Here is a combined summary of the two video reviews..."
-}
+```
